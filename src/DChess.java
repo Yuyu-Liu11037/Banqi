@@ -26,7 +26,7 @@ public class DChess {
     public static void main(String[] args) throws IOException {
         Set<String> imgNames = new HashSet<>(Arrays.asList(
                 "bj", "bm", "bx", "bs", "bb", "bp", "bz",
-                "rj", "rm", "rx", "rs", "rb", "rp", "rz"));
+                "rj", "rm", "rx", "rs", "rb", "rp", "rz","back"));
         for (String imgName : imgNames) {
             File imgFile = new File("./img/" + imgName + ".png");
             keyNameValueImage.put(imgName, ImageIO.read(imgFile).getScaledInstance(DChessPanel.side, DChessPanel.side, Image.SCALE_SMOOTH));
@@ -99,6 +99,7 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
             }
             Image img = DChess.keyNameValueImage.get(p.imgName);
             g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
+            g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
         }
     }
     private void drawGrid(Graphics g) {
