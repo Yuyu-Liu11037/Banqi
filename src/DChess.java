@@ -393,6 +393,7 @@ class Piece {
     Rank rank;
     String imgName;
     int points;
+    boolean isReturn;
     Piece(int col, int row, boolean isRed,
           Rank rank, String imgName , int points) {
         this.col = col;
@@ -401,5 +402,6 @@ class Piece {
         this.rank = rank;
         this.imgName = imgName;
         this.points = points;
+        this.isReturn = false;
     }
 }
