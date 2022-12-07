@@ -1,3 +1,5 @@
+package GamePresentation;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -21,19 +23,25 @@ public class DChess {
         f.setResizable(false);
         f.add(new DChessPanel(brd));
         f.setVisible(true);
-    }
+    }//创建屏幕
+
 
     public static void main(String[] args) throws IOException {
         Set<String> imgNames = new HashSet<>(Arrays.asList(
                 "bj", "bm", "bx", "bs", "bb", "bp", "bz",
-                "rj", "rm", "rx", "rs", "rb", "rp", "rz"));
+                "rj", "rm", "rx", "rs", "rb", "rp", "rz", "back"));
         for (String imgName : imgNames) {
             File imgFile = new File("./img/" + imgName + ".png");
-            keyNameValueImage.put(imgName, ImageIO.read(imgFile).getScaledInstance(DChessPanel.side, DChessPanel.side, Image.SCALE_SMOOTH));
+            keyNameValueImage.put(imgName, ImageIO.read(imgFile).getScaledInstance(DChessPanel.side, DChessPanel.side
+                    , Image.SCALE_SMOOTH));
         }
         new DChess();
+
+
     }
+
 }
+
 
 class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
     static int orgX = 110, orgY = 50, side = 67;
@@ -42,6 +50,7 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
     private Point toColRow;
     private Point movingPieceXY;
     private Image movingPieceImage;
+    private int initialize = 0;
 
     DChessPanel(DChessBoard brd){
         this.brd = brd;
@@ -49,7 +58,7 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
     }
     private Point xyToColRow(Point xy) {
         return new Point((xy.x - orgX)/side, (xy.y - orgY)/side);
-    }
+    }//计算鼠标点击的位置
     public void mousePressed(MouseEvent me) {
         /**
          *  Test code
@@ -73,16 +82,24 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
 
         if (fromColRow == null) return;
         toColRow = xyToColRow(me.getPoint());
-        System.out.println(toColRow);
+//        System.out.println(toColRow);
         if (brd.validMove(fromColRow.x, fromColRow.y, toColRow.x, toColRow.y)) {
             brd.movePiece(fromColRow.x, fromColRow.y, toColRow.x, toColRow.y);
             System.out.println(brd);
         }
+        int x=(me.getX() - orgX) / side;
+        int y=(me.getY() - orgY) / side;
+        if(findPiece(x, y).isReturn==0){findPiece(x, y).isReturn++;}
+
+
+
+
         fromColRow = null;
         movingPieceXY = null;
         movingPieceImage = null;
         repaint(); // redraw the updated game board
     }
+
     public void mouseClicked(MouseEvent me) {}
     public void mouseEntered(MouseEvent me) {}
     public void mouseExited(MouseEvent me) {}
@@ -92,43 +109,84 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
         repaint();
     }
     public void mouseMoved(MouseEvent me) {}
-    private void drawPieces(Graphics g) {
+
+
+
+    private void drawPiecesBack(Graphics g) {
         for (Piece p : brd.getPieces()) {
             if (fromColRow != null && fromColRow.x == p.col && fromColRow.y == p.row) {
                 continue; // drawn as movingPieceImage already
             }
             Image img = DChess.keyNameValueImage.get(p.imgName);
-            g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
+//            g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
+            g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
+            System.out.println("output1");
         }
     }
+
+    private void drawPieces(Graphics g,Piece p) {
+            Image img = DChess.keyNameValueImage.get(p.imgName);
+            g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
+//            g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
+            System.out.println("output2");
+    }
+
+
+
+
+
+
+    public Piece findPiece(int x,int y) {
+        for (Piece p : brd.getPieces()) {
+            if (x == p.col) {
+                if (y == p.row) {
+                    return p;
+                }
+            }
+        }
+        return null;
+    }
+
+
     private void drawGrid(Graphics g) {
         for (int i = 0; i <= DChessBoard.cols; i++) {
             g.drawLine(orgX + i * side, orgY,
-                    orgX + i * side, orgY + 8 * side);
+                        orgX + i * side, orgY + 8 * side);
         }
         for (int i = 0; i <= DChessBoard.rows; i++) {
-            g.drawLine(orgX,            orgY + i * side,
+            g.drawLine(orgX, orgY + i * side,
                     orgX + 4 * side, orgY + i * side);
         }
     }
-    @Override
+
+
+
     public void paintComponent(Graphics g) {
-        drawGrid(g);
-        drawPieces(g);
-        if (movingPieceImage != null) {
-            g.drawImage(movingPieceImage, movingPieceXY.x, movingPieceXY.y, null);
+
+        if(initialize<2){drawGrid(g);drawPiecesBack(g);  initialize++;
+            }
+        for(Piece p: brd.getPieces()){
+            if (p.isReturn==1){drawPieces(g,p);p.isReturn++;}
         }
+        System.out.println("_____________________");
+
+//        if (movingPieceImage != null) {
+//            g.drawImage(movingPieceImage, movingPieceXY.x, movingPieceXY.y, null);
+//        }
     }
 }
+
+
+
+
+
 
 class DChessBoard {
     final static int rows = 8;
     final static int cols = 4;
     private boolean isRedTurn = true;
     private Set<Piece> pieces = new HashSet<>();
-    Set<Piece> getPieces() {
-        return pieces;
-    }
+    Set<Piece> getPieces() {return pieces;}
 
     @Override
     public String toString() {
@@ -159,10 +217,16 @@ class DChessBoard {
         }
         return brdStr;
     }
+
+
+
+
+
+
     DChessBoard(){
         Integer[] row = {0,1,2,3,4,5,6,7};
         List<Integer> intRow = Arrays.asList(row);
-        Collections.shuffle(intRow);
+        Collections.shuffle(intRow);//shuffle函数以打乱行列
         intRow.toArray(row);
         Integer[] column = {0,1,2,3};
         List<Integer> intColumn = Arrays.asList(column);
@@ -203,8 +267,10 @@ class DChessBoard {
             pieces.add(new Piece(column[3], row[5], false, Rank.SOLDIER, "bz" , 1));
             pieces.add(new Piece(column[3], row[6], false, Rank.SOLDIER, "bz" , 1));
             pieces.add(new Piece(column[3], row[7], false, Rank.SOLDIER, "bz" , 1));
-        }
+        }//随机填入棋子
     }
+
+
     void movePiece(int fromCol, int fromRow, int toCol, int toRow) {
         Piece movingP = pieceAt(fromCol, fromRow);
         Piece targetP = pieceAt(toCol, toRow);
@@ -214,6 +280,9 @@ class DChessBoard {
                 movingP.rank, movingP.imgName , movingP.points));
         isRedTurn = !isRedTurn;
     }
+
+
+
     Piece pieceAt(int col, int row) {
         for (Piece piece : pieces) {
             if (piece.col == col && piece.row == row) {
@@ -285,6 +354,7 @@ class DChessBoard {
             return true;
         }
     }
+
     private boolean isValidMinisterMove(int fromCol, int fromRow,
                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
@@ -296,6 +366,7 @@ class DChessBoard {
             return true;
         }
     }
+
     private boolean isValidChariotMove(int fromCol, int fromRow,
                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
@@ -376,6 +447,9 @@ class DChessBoard {
         return ok;
     }
 }
+
+
+
 enum Rank {
     GENERAL,
     ADVISOR,
@@ -384,22 +458,5 @@ enum Rank {
     HORSE,
     SOLDIER,
     CANNON
-}
+}//棋子排位
 
-class Piece {
-    int col;
-    int row;
-    boolean isRed;
-    Rank rank;
-    String imgName;
-    int points;
-    Piece(int col, int row, boolean isRed,
-          Rank rank, String imgName , int points) {
-        this.col = col;
-        this.row = row;
-        this.isRed = isRed;
-        this.rank = rank;
-        this.imgName = imgName;
-        this.points = points;
-    }
-}
