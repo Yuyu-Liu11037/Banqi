@@ -3,7 +3,6 @@ import GamePresentation.Piece;
 
 public class GameProcess {
     final static int winScore = 60 ;
-
     public boolean levelComparson() {
 
         return false;
@@ -25,8 +24,4 @@ public class GameProcess {
 
         return false;
     }
-    
-
 }
-
-

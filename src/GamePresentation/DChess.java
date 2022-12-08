@@ -3,56 +3,68 @@ package GamePresentation;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Blob;
 import java.util.*;
 import java.util.List;
 
 public class DChess {
     static Map<String, Image> keyNameValueImage = new HashMap<>();
+    static Dimension chessBoardDimension = new Dimension(600, 820);
+
     DChess(){
         DChessBoard brd = new DChessBoard();
-        System.out.println(brd);
+        System.out.println(brd.toString());
+
+        JTextField status = new JTextField(10);
+        status.setPreferredSize(new Dimension(200,36));
+        status.setFont(new Font("Consolas", Font.PLAIN,30));
+        status.setForeground(Color.WHITE);
+        status.setBackground(new Color(106,74,43));
+        status.setText("Start Game");
+        status.setCaretColor(Color.white);
+        status.setEditable(false);
+        
+        DChessPanel dchesspanel = new DChessPanel(brd);
+        dchesspanel.add(status);
 
         JFrame f = new JFrame("Dark Chess");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setSize(500, 700);
+        f.setLayout(new GridLayout());
+        f.setSize(chessBoardDimension);
         f.setResizable(false);
-        f.add(new DChessPanel(brd));
+        f.add(dchesspanel);
         f.setVisible(true);
     }//创建屏幕
 
-
     public static void main(String[] args) throws IOException {
+        //read images
         Set<String> imgNames = new HashSet<>(Arrays.asList(
                 "bj", "bm", "bx", "bs", "bb", "bp", "bz",
                 "rj", "rm", "rx", "rs", "rb", "rp", "rz", "back"));
         for (String imgName : imgNames) {
             File imgFile = new File("./img/" + imgName + ".png");
-            keyNameValueImage.put(imgName, ImageIO.read(imgFile).getScaledInstance(DChessPanel.side, DChessPanel.side
-                    , Image.SCALE_SMOOTH));
+            keyNameValueImage.put(imgName, ImageIO.read(imgFile).getScaledInstance(DChessPanel.side, DChessPanel.side , Image.SCALE_SMOOTH));
         }
+        keyNameValueImage.put("bg", ImageIO.read(new File("./img/bg.png")).getScaledInstance((int)chessBoardDimension.getWidth(), (int)chessBoardDimension.getHeight() , Image.SCALE_SMOOTH));
+
         new DChess();
-
-
     }
-
 }
 
-
 class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
-    static int orgX = 110, orgY = 50, side = 67;
+    static int orgX = 135, orgY = 85, side = 82;
     private DChessBoard brd;
     private Point fromColRow;
     private Point toColRow;
+    private Point clickColRow;
     private Point movingPieceXY;
     private Image movingPieceImage;
-    private int initialize = 0;
+    //private int initialize = 0;
 
-    DChessPanel(DChessBoard brd){
+    public DChessPanel(DChessBoard brd){
         this.brd = brd;
         addMouseListener(this);
     }
@@ -60,47 +72,53 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
         return new Point((xy.x - orgX)/side, (xy.y - orgY)/side);
     }//计算鼠标点击的位置
     public void mousePressed(MouseEvent me) {
+        fromColRow = xyToColRow(me.getPoint());
         /**
          *  Test code
-         */
-        /*Point mouseTip = me.getPoint();
-        System.out.println("mousePressed at (" + mouseTip.x + ", " + mouseTip.y + ")");*/
+         */        
+        Point mouseTip = me.getPoint();
+        System.out.println("mousePressed at (" + fromColRow.getX() + "," + fromColRow.getY() + ");(" + mouseTip.x + ", " + mouseTip.y + ")");
 
-        fromColRow = xyToColRow(me.getPoint());
-        System.out.println(fromColRow);
         Piece movingPiece = brd.pieceAt(fromColRow.x, fromColRow.y);
         if (movingPiece != null) {
             movingPieceImage = DChess.keyNameValueImage.get(movingPiece.imgName);
         }
     }
     public void mouseReleased(MouseEvent me) {
-        /**
-         *  Test code
-         */
-        /*Point mouseTip = me.getPoint();
-        System.out.println("mouseReleased at (" + mouseTip.x + ", " + mouseTip.y + ")");*/
-
         if (fromColRow == null) return;
         toColRow = xyToColRow(me.getPoint());
-//        System.out.println(toColRow);
+        /**
+         *  Test code
+         */ 
+        Point mouseTip = me.getPoint();
+        System.out.println("mouseReleased at (" + toColRow.getX() + "," + toColRow.getY() + ");(" + mouseTip.x + ", " + mouseTip.y + ")");
+
+
         if (brd.validMove(fromColRow.x, fromColRow.y, toColRow.x, toColRow.y)) {
             brd.movePiece(fromColRow.x, fromColRow.y, toColRow.x, toColRow.y);
             System.out.println(brd);
         }
-        int x=(me.getX() - orgX) / side;
+        /* int x=(me.getX() - orgX) / side;
         int y=(me.getY() - orgY) / side;
-        if(findPiece(x, y).isReturn==0){findPiece(x, y).isReturn++;}
-
-
-
+        if(findPiece(x, y).isReturn==0){
+            findPiece(x, y).isReturn++;
+        } */
 
         fromColRow = null;
         movingPieceXY = null;
         movingPieceImage = null;
         repaint(); // redraw the updated game board
     }
-
-    public void mouseClicked(MouseEvent me) {}
+    public void mouseClicked(MouseEvent me) {
+        clickColRow = xyToColRow(me.getPoint());
+        Piece turningPiece = brd.pieceAt(clickColRow.x, clickColRow.y);
+        if (turningPiece != null){
+            if (turningPiece.isUp == false){
+                brd.turnPiece((int)clickColRow.getX(),(int)clickColRow.getY());
+            }
+        }
+        repaint();
+    }
     public void mouseEntered(MouseEvent me) {}
     public void mouseExited(MouseEvent me) {}
     public void mouseDragged(MouseEvent me) {
@@ -109,34 +127,44 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
         repaint();
     }
     public void mouseMoved(MouseEvent me) {}
-
-
-
-    private void drawPiecesBack(Graphics g) {
+    /* private void drawPiecesBack(Graphics g) {
         for (Piece p : brd.getPieces()) {
             if (fromColRow != null && fromColRow.x == p.col && fromColRow.y == p.row) {
                 continue; // drawn as movingPieceImage already
             }
             Image img = DChess.keyNameValueImage.get(p.imgName);
-//            g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
+            g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
             g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
-            System.out.println("output1");
+            //System.out.println("output1");
         }
-    }
+    } */
 
-    private void drawPieces(Graphics g,Piece p) {
+    /* private void drawPieces(Graphics g,Piece p) {
             Image img = DChess.keyNameValueImage.get(p.imgName);
             g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
-//            g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
-            System.out.println("output2");
+            //g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
+            //System.out.println("output2");
+    } */
+    
+    private void drawPieces(Graphics g) {
+        for (Piece p : brd.getPieces()) {
+            if (fromColRow != null && fromColRow.x == p.col && fromColRow.y == p.row) {
+                continue; // drawn as movingPieceImage already
+            }
+            if (p.isUp == false){
+                Image img = DChess.keyNameValueImage.get("back");
+                g.drawImage(img, (int)(orgX + side * p.col), (int)(orgY + side * p.row), this);
+            } else {
+                Image img = DChess.keyNameValueImage.get(p.imgName);
+                g.drawImage(img, (int)(orgX + side * p.col), (int)(orgY + side * p.row), this);
+            }
+        }
     }
-
-
-
-
-
-
-    public Piece findPiece(int x,int y) {
+    private void drawBackground(Graphics g){
+        g.drawImage(DChess.keyNameValueImage.get("bg"), 0, 0, null);
+    }
+    //Abundant method. pieceAt() already exists.
+    /* public Piece findPiece(int x,int y) {
         for (Piece p : brd.getPieces()) {
             if (x == p.col) {
                 if (y == p.row) {
@@ -145,49 +173,62 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
             }
         }
         return null;
-    }
-
-
-    private void drawGrid(Graphics g) {
-        for (int i = 0; i <= DChessBoard.cols; i++) {
-            g.drawLine(orgX + i * side, orgY,
-                        orgX + i * side, orgY + 8 * side);
-        }
-        for (int i = 0; i <= DChessBoard.rows; i++) {
-            g.drawLine(orgX, orgY + i * side,
-                    orgX + 4 * side, orgY + i * side);
-        }
-    }
-
-
-
+    } */
+    @Override
     public void paintComponent(Graphics g) {
-
-        if(initialize<2){drawGrid(g);drawPiecesBack(g);  initialize++;
+        /* if(initialize<2){
+            drawGrid(g);
+            drawPiecesBack(g);  
+            initialize++;
             }
         for(Piece p: brd.getPieces()){
-            if (p.isReturn==1){drawPieces(g,p);p.isReturn++;}
+            if (p.isReturn==1){
+                drawPieces(g,p);
+                p.isReturn++;
+            }
         }
-        System.out.println("_____________________");
+        System.out.println("______________________"); */
+        super.paintComponent(g);
+        drawBackground(g);
+        drawPieces(g);
 
-//        if (movingPieceImage != null) {
-//            g.drawImage(movingPieceImage, movingPieceXY.x, movingPieceXY.y, null);
-//        }
+        /* if (movingPieceImage != null) {
+            g.drawImage(movingPieceImage, movingPieceXY.x, movingPieceXY.y, null);
+        } */
     }
 }
-
-
-
-
-
 
 class DChessBoard {
     final static int rows = 8;
     final static int cols = 4;
     private boolean isRedTurn = true;
     private Set<Piece> pieces = new HashSet<>();
-    Set<Piece> getPieces() {return pieces;}
+    private int redScore = 0;
+    private int blackScore = 0;
+    private boolean isGameOver = false;
+    Set<Piece> getPieces() {
+        return pieces;
+    }
 
+    public boolean getTurn(){
+        return isRedTurn;
+    }
+    public int getRedScore(){
+        return redScore;
+    }
+    public int getBlackScore(){
+        return blackScore;
+    }
+    public boolean isGameOver(){
+        return isGameOver;
+    }
+    public boolean checkGameOver() {
+		if (redScore >= 60 || blackScore >= 60){
+            return true;
+        } else {
+            return false;
+        }
+	}
     @Override
     public String toString() {
         String brdStr = "";
@@ -217,21 +258,16 @@ class DChessBoard {
         }
         return brdStr;
     }
-
-
-
-
-
-
+    //随机初始化棋子
     DChessBoard(){
-        Integer[] row = {0,1,2,3,4,5,6,7};
-        List<Integer> intRow = Arrays.asList(row);
-        Collections.shuffle(intRow);//shuffle函数以打乱行列
-        intRow.toArray(row);
-        Integer[] column = {0,1,2,3};
-        List<Integer> intColumn = Arrays.asList(column);
-        Collections.shuffle(intColumn);
-        intRow.toArray(column);
+        Double[] row = {0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0};
+        List<Double> doubleRow = Arrays.asList(row);
+        Collections.shuffle(doubleRow);//shuffle函数以打乱行列
+        doubleRow.toArray(row);
+        Double[] column = {0.0,1.0,2.0,3.0};
+        List<Double> doubleColumn = Arrays.asList(column);
+        Collections.shuffle(doubleColumn);
+        doubleColumn.toArray(column);
 
         //fill the 2D-chessboard with pieces in random order
         {
@@ -269,20 +305,154 @@ class DChessBoard {
             pieces.add(new Piece(column[3], row[7], false, Rank.SOLDIER, "bz" , 1));
         }//随机填入棋子
     }
-
-
     void movePiece(int fromCol, int fromRow, int toCol, int toRow) {
         Piece movingP = pieceAt(fromCol, fromRow);
         Piece targetP = pieceAt(toCol, toRow);
+        //when a targetPiece is captured, display the captured piece beside the board
+        if (targetP != null){
+            switch(targetP.rank){
+                case GENERAL:
+                    if (targetP.isRed){
+                        Piece pieceEaten = new Piece(-1.5, -0.5, true, Rank.GENERAL, "rb", 30);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        blackScore += 30;
+                    } else {
+                        Piece pieceEaten = new Piece(4.5, 8.0, false, Rank.GENERAL, "bb", 30);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        redScore += 30;
+                    }
+                    System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
+                    if (checkGameOver()){System.exit(0);}
+                    break;
+                case ADVISOR:
+                    if (targetP.isRed){
+                        Piece pieceEaten = new Piece(-1.5, 0.3, true, Rank.ADVISOR, "rs", 10);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        blackScore += 10;
+                    } else {
+                        Piece pieceEaten = new Piece(4.5, 6.9, false, Rank.ADVISOR, "bs", 10);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        redScore += 10;
+                    }
+                    System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
+                    if (checkGameOver()){System.exit(0);}
+                    break;
+                case MINISTER:
+                    if (targetP.isRed){
+                        Piece pieceEaten = new Piece(-1.5, 1.1, true, Rank.MINISTER, "rx", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        blackScore += 5;
+                    } else {
+                        Piece pieceEaten = new Piece(4.5, 6.0, false, Rank.MINISTER, "bx", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        redScore += 5;
+                    }
+                    System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
+                    if (checkGameOver()){System.exit(0);}
+                    break;
+                case CHARIOT:
+                    if (targetP.isRed){
+                        Piece pieceEaten = new Piece(-1.5, 2.0, true, Rank.CHARIOT, "rj", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        blackScore += 5;
+                    } else {
+                        Piece pieceEaten = new Piece(4.5, 5.1, false, Rank.CHARIOT, "bj", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        redScore += 5;
+                    }
+                    System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
+                    if (checkGameOver()){System.exit(0);}
+                    break;
+                case HORSE:
+                    if (targetP.isRed){
+                        Piece pieceEaten = new Piece(-1.5, 3.0, true, Rank.HORSE, "rm", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        blackScore += 5;
+                    } else {
+                        Piece pieceEaten = new Piece(4.5, 4.3, false, Rank.HORSE, "bm", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        redScore += 5;
+                    }
+                    System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
+                    if (checkGameOver()){System.exit(0);}
+                    break;
+                case SOLDIER:
+                    if (targetP.isRed){
+                        Piece pieceEaten = new Piece(-1.5, 4.6, true, Rank.SOLDIER, "rz", 1);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        blackScore += 1;
+                    } else {
+                        Piece pieceEaten = new Piece(4.5, 2.5, false, Rank.SOLDIER, "bz", 1);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        redScore += 1;
+                    }
+                    System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
+                    if (checkGameOver()){System.exit(0);}
+                    break;
+                case CANNON:
+                    if (targetP.isRed){
+                        Piece pieceEaten = new Piece(-1.5, 3.8, true, Rank.CANNON, "rp", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        blackScore += 5;
+                    } else {
+                        Piece pieceEaten = new Piece(4.5, 3.4, false, Rank.CANNON, "bp", 5);
+                        pieceEaten.turnUp(true);
+                        pieces.add(pieceEaten);
+                        redScore += 5;
+                    }
+                    System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
+                    if (checkGameOver()){System.exit(0);}
+                    break;
+            }
+        }
+
         pieces.remove(movingP);
         pieces.remove(targetP);
-        pieces.add(new Piece(toCol, toRow, movingP.isRed,
-                movingP.rank, movingP.imgName , movingP.points));
+        Piece newP = new Piece((double)toCol, (double)toRow, movingP.isRed, movingP.rank, movingP.imgName , movingP.points);
+        newP.turnUp(true);
+        pieces.add(newP);
         isRedTurn = !isRedTurn;
+        if (isRedTurn){
+            System.out.println("Red turn");
+        } else {
+            System.out.println("Black turn");
+        }
     }
-
-
-
+    void turnPiece(int turnCol, int turnRol){
+        Piece turningPieceFalse = pieceAt(turnCol, turnRol);
+        boolean isInitial = true;
+        for (Piece p : pieces){
+            if (p.isUp == true){
+                isInitial = false;
+                break;
+            }
+        }
+        if (isInitial){isRedTurn = turningPieceFalse.isRed;}
+        Piece turningPieceTrue = new Piece((double)turnCol, (double)turnRol, turningPieceFalse.isRed, turningPieceFalse.rank, turningPieceFalse.imgName, turningPieceFalse.points);
+        turningPieceTrue.turnUp(true);
+        pieces.remove(turningPieceFalse);
+        pieces.add(turningPieceTrue);
+        isRedTurn = !isRedTurn;
+        if (isRedTurn){
+            System.out.println("Red turn");
+        } else {
+            System.out.println("Black turn");
+        }
+    }
+    //get the piece at location (col, row)
     Piece pieceAt(int col, int row) {
         for (Piece piece : pieces) {
             if (piece.col == col && piece.row == row) {
@@ -354,7 +524,6 @@ class DChessBoard {
             return true;
         }
     }
-
     private boolean isValidMinisterMove(int fromCol, int fromRow,
                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
@@ -366,7 +535,6 @@ class DChessBoard {
             return true;
         }
     }
-
     private boolean isValidChariotMove(int fromCol, int fromRow,
                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
@@ -405,8 +573,7 @@ class DChessBoard {
         if(pieceAt(toCol,toRow) == null){
             return false;
         }
-        else if (steps(fromCol, fromRow, toCol, toRow) != 2 || numPiecesBetween(fromCol, fromRow,
-        toCol, toRow) != 1) {
+        else if (steps(fromCol, fromRow, toCol, toRow) != 2 || numPiecesBetween(fromCol, fromRow, toCol, toRow) != 1) {
             return false;
         } else {
             return true;
@@ -417,9 +584,24 @@ class DChessBoard {
             return false;
         }
         Piece p = pieceAt(fromC, fromR);
-        if (p == null || p.isRed != isRedTurn || selfKilling(fromC, fromR, toC, toR, p.isRed)) {
+        if ((p == null || p.isRed != isRedTurn || selfKilling(fromC, fromR, toC, toR, p.isRed) && p.rank != Rank.CANNON)) {
             return false;
         }
+        if (p.rank == Rank.CANNON){
+            Piece targetOfCannon = pieceAt(toC, toR);
+            if (targetOfCannon == null){
+                return false;
+            } else {
+                if (targetOfCannon.isUp == true && selfKilling(fromC, fromR, toC, toR, p.isRed)){
+                    return false;
+                }
+            }
+        }
+        Piece targetP = pieceAt(toR, toR);
+        if (p.isUp == false || (targetP != null && targetP.isUp == false && p.rank != Rank.CANNON)){
+            return false;
+        }
+
         boolean ok = false;
         switch (p.rank) {
             case GENERAL:
@@ -448,8 +630,6 @@ class DChessBoard {
     }
 }
 
-
-
 enum Rank {
     GENERAL,
     ADVISOR,
@@ -459,4 +639,3 @@ enum Rank {
     SOLDIER,
     CANNON
 }//棋子排位
-
