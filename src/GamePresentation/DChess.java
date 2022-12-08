@@ -43,11 +43,7 @@ public class DChess {
         //read images
         Set<String> imgNames = new HashSet<>(Arrays.asList(
                 "bj", "bm", "bx", "bs", "bb", "bp", "bz",
-<<<<<<< HEAD:src/GamePresentation/DChess.java
                 "rj", "rm", "rx", "rs", "rb", "rp", "rz", "back"));
-=======
-                "rj", "rm", "rx", "rs", "rb", "rp", "rz","back"));
->>>>>>> 4e17e985ab38341758febb6d64c4dc9cd50347a9:src/DChess.java
         for (String imgName : imgNames) {
             File imgFile = new File("./img/" + imgName + ".png");
             keyNameValueImage.put(imgName, ImageIO.read(imgFile).getScaledInstance(DChessPanel.side, DChessPanel.side , Image.SCALE_SMOOTH));
@@ -139,7 +135,6 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
             Image img = DChess.keyNameValueImage.get(p.imgName);
             g.drawImage(img, orgX + side * p.col, orgY + side * p.row, this);
             g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
-<<<<<<< HEAD:src/GamePresentation/DChess.java
             //System.out.println("output1");
         }
     } */
@@ -163,8 +158,6 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
                 Image img = DChess.keyNameValueImage.get(p.imgName);
                 g.drawImage(img, (int)(orgX + side * p.col), (int)(orgY + side * p.row), this);
             }
-=======
->>>>>>> 4e17e985ab38341758febb6d64c4dc9cd50347a9:src/DChess.java
         }
     }
     private void drawBackground(Graphics g){
@@ -645,28 +638,4 @@ enum Rank {
     HORSE,
     SOLDIER,
     CANNON
-<<<<<<< HEAD:src/GamePresentation/DChess.java
 }//棋子排位
-=======
-}
-
-class Piece {
-    int col;
-    int row;
-    boolean isRed;
-    Rank rank;
-    String imgName;
-    int points;
-    boolean isReturn;
-    Piece(int col, int row, boolean isRed,
-          Rank rank, String imgName , int points) {
-        this.col = col;
-        this.row = row;
-        this.isRed = isRed;
-        this.rank = rank;
-        this.imgName = imgName;
-        this.points = points;
-        this.isReturn = false;
-    }
-}
->>>>>>> 4e17e985ab38341758febb6d64c4dc9cd50347a9:src/DChess.java
