@@ -6,38 +6,80 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Blob;
 import java.util.*;
 import java.util.List;
+import GameCore.save;
 
-public class DChess {
+public class DChess extends JFrame implements ActionListener{
     static Map<String, Image> keyNameValueImage = new HashMap<>();
     static Dimension chessBoardDimension = new Dimension(600, 820);
+    /* JTextField status; */
+    DChessBoard brd;
+    JButton restartButton;
+    JButton cheatButton;
+    DChessPanel dchesspanel;
+    JFrame f;
+
+    /* public boolean getBrdTurn() {
+        return brd.getTurn();
+    } */
 
     DChess(){
-        DChessBoard brd = new DChessBoard();
+        brd = new DChessBoard();
         System.out.println(brd.toString());
 
-        JTextField status = new JTextField(10);
-        status.setPreferredSize(new Dimension(200,36));
-        status.setFont(new Font("Consolas", Font.PLAIN,30));
-        status.setForeground(Color.WHITE);
-        status.setBackground(new Color(106,74,43));
-        status.setText("Start Game");
-        status.setCaretColor(Color.white);
-        status.setEditable(false);
-        
-        DChessPanel dchesspanel = new DChessPanel(brd);
-        dchesspanel.add(status);
+        restartButton = new JButton();
+        restartButton.setText("restart");
+        restartButton.setPreferredSize(new Dimension(100,40));
+        restartButton.setLocation(0,0);
+        restartButton.addActionListener(this);
 
-        JFrame f = new JFrame("Dark Chess");
+        cheatButton = new JButton();
+        cheatButton.setText("cheatMode");
+        cheatButton.setPreferredSize(new Dimension(100, 40));
+        cheatButton.setLocation(1,0);
+        cheatButton.addActionListener(this);
+
+        dchesspanel = new DChessPanel(brd);
+        dchesspanel.add(restartButton);
+        dchesspanel.add(cheatButton);
+
+        f = new JFrame("Dark Chess");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setLayout(new GridLayout());
         f.setSize(chessBoardDimension);
         f.setResizable(false);
         f.add(dchesspanel);
         f.setVisible(true);
+
+        /* while(true){
+            if (getBrdTurn()){
+                status.setText("Red turn");
+            } else {
+                status.setText("Black turn");
+            }
+        } */
+
     }//创建屏幕
+
+    /* 
+     * when buttons are clicked, perform actions, respectively
+     */
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if(e.getSource() == restartButton){
+            f.dispose();
+            new DChess();
+        }   
+        if(e.getSource() == cheatButton){
+            dchesspanel.setCheatMode();
+            if(dchesspanel.getCheatMode()){
+                System.out.println("Cheat Mode");
+            } else{
+                System.out.println("Normal Mode");
+            }
+        }
+    }
 
     public static void main(String[] args) throws IOException {
         //read images
@@ -62,8 +104,24 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
     private Point clickColRow;
     private Point movingPieceXY;
     private Image movingPieceImage;
+    private boolean isCheatMode = false;
+    private String chessName;
+    private String chessColor;
     //private int initialize = 0;
+    public void setCheatMode(){
+        isCheatMode = !isCheatMode;
+    }
 
+    public boolean getCheatMode(){
+        return isCheatMode;
+    }
+
+    public String getChessName(){
+        return chessName;
+    }
+    public String getChessColor(){
+        return chessColor;
+    }
     public DChessPanel(DChessBoard brd){
         this.brd = brd;
         addMouseListener(this);
@@ -75,7 +133,7 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
         fromColRow = xyToColRow(me.getPoint());
         /**
          *  Test code
-         */        
+         */
         Point mouseTip = me.getPoint();
         System.out.println("mousePressed at (" + fromColRow.getX() + "," + fromColRow.getY() + ");(" + mouseTip.x + ", " + mouseTip.y + ")");
 
@@ -89,7 +147,7 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
         toColRow = xyToColRow(me.getPoint());
         /**
          *  Test code
-         */ 
+         */
         Point mouseTip = me.getPoint();
         System.out.println("mouseReleased at (" + toColRow.getX() + "," + toColRow.getY() + ");(" + mouseTip.x + ", " + mouseTip.y + ")");
 
@@ -114,7 +172,17 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
         Piece turningPiece = brd.pieceAt(clickColRow.x, clickColRow.y);
         if (turningPiece != null){
             if (turningPiece.isUp == false){
-                brd.turnPiece((int)clickColRow.getX(),(int)clickColRow.getY());
+                if(!isCheatMode){
+                    brd.turnPiece((int)clickColRow.getX(),(int)clickColRow.getY());
+                } else {
+                    chessName = turningPiece.getRank();
+                    if(turningPiece.getColor()){
+                        chessColor = "Red";
+                    } else {
+                        chessColor = "Black";
+                    }
+                    System.out.println(turningPiece.getRank() + "  " + turningPiece.getColor());
+                }
             }
         }
         repaint();
@@ -145,7 +213,7 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
             //g.drawImage(DChess.keyNameValueImage.get("back") , orgX + side * p.col, orgY + side * p.row, this);
             //System.out.println("output2");
     } */
-    
+
     private void drawPieces(Graphics g) {
         for (Piece p : brd.getPieces()) {
             if (fromColRow != null && fromColRow.x == p.col && fromColRow.y == p.row) {
@@ -163,35 +231,70 @@ class DChessPanel extends JPanel implements MouseListener, MouseMotionListener {
     private void drawBackground(Graphics g){
         g.drawImage(DChess.keyNameValueImage.get("bg"), 0, 0, null);
     }
-    //Abundant method. pieceAt() already exists.
-    /* public Piece findPiece(int x,int y) {
-        for (Piece p : brd.getPieces()) {
-            if (x == p.col) {
-                if (y == p.row) {
-                    return p;
-                }
-            }
-        }
-        return null;
-    } */
     @Override
     public void paintComponent(Graphics g) {
-        /* if(initialize<2){
-            drawGrid(g);
-            drawPiecesBack(g);  
-            initialize++;
-            }
-        for(Piece p: brd.getPieces()){
-            if (p.isReturn==1){
-                drawPieces(g,p);
-                p.isReturn++;
-            }
-        }
-        System.out.println("______________________"); */
         super.paintComponent(g);
         drawBackground(g);
         drawPieces(g);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
+        g2.drawString("Red Score : " + brd.getRedScore() + "    Black Score : " + brd.getBlackScore(), 130, 770);
+        g2.setColor(Color.WHITE);
+        /* 
+         * Show the number of captured pieces
+         */
+        if(!brd.getCapturedNumber(0).equals("0")){g2.drawString(brd.getCapturedNumber(0), 20, 180);}
+        if(!brd.getCapturedNumber(1).equals("0")){g2.drawString(brd.getCapturedNumber(1), 520, 720);}
+        if(!brd.getCapturedNumber(2).equals("0")){g2.drawString(brd.getCapturedNumber(2), 20, 245);}
+        if(!brd.getCapturedNumber(3).equals("0")){g2.drawString(brd.getCapturedNumber(3), 520, 650);}
+        if(!brd.getCapturedNumber(4).equals("0")){g2.drawString(brd.getCapturedNumber(4), 20, 315);}
+        if(!brd.getCapturedNumber(5).equals("0")){g2.drawString(brd.getCapturedNumber(5), 520, 580);}
+        if(!brd.getCapturedNumber(6).equals("0")){g2.drawString(brd.getCapturedNumber(6), 20, 385);}
+        if(!brd.getCapturedNumber(7).equals("0")){g2.drawString(brd.getCapturedNumber(7), 520, 505);}
+        if(!brd.getCapturedNumber(8).equals("0")){g2.drawString(brd.getCapturedNumber(8), 20, 525);}
+        if(!brd.getCapturedNumber(9).equals("0")){g2.drawString(brd.getCapturedNumber(9), 520, 365);}
+        if(!brd.getCapturedNumber(10).equals("0")){g2.drawString(brd.getCapturedNumber(10), 20, 460);}
+        if(!brd.getCapturedNumber(11).equals("0")){g2.drawString(brd.getCapturedNumber(11), 520, 435);}
+        
+        /* 
+         * Show game status
+         */
+        g2.setFont(new Font("Comic Sans MS", Font.BOLD, 30));
+        if(brd.getTurn()){
+            g2.setColor(new Color(173,52,53));
+            g2.drawString("Red   Turn", 5, 35);
+        } else {
+            g2.setColor(Color.BLACK);
+            g2.drawString("Black Turn", 5, 35);
+        }
 
+        /* 
+         * Show gameOver
+         */
+        if(brd.isGameOver()){
+            g2.setColor(Color.WHITE);
+            g2.fillRect(125, 75, 352, 675);
+
+            g2.setColor(Color.BLACK);
+            if(brd.getTurn()){
+                g2.drawString("Game Over!",orgX,orgY+250);
+                g2.drawString("Winner is Black", orgX, orgY+350);
+            } else {
+                g2.drawString("Game Over!",orgX,orgY+250);
+                g2.drawString("Winner is Red", orgX, orgY+350);
+            }
+        }
+        System.out.println(brd);
+
+        /* 
+         * perform cheat mode
+         */
+        if(isCheatMode){
+            g2.setColor(Color.WHITE);
+            g2.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
+            g2.drawString(chessName, 487, 25);
+            g2.drawString(chessColor, 515, 50);
+        }
         /* if (movingPieceImage != null) {
             g.drawImage(movingPieceImage, movingPieceXY.x, movingPieceXY.y, null);
         } */
@@ -206,6 +309,17 @@ class DChessBoard {
     private int redScore = 0;
     private int blackScore = 0;
     private boolean isGameOver = false;
+    /* 
+     * capturedNumber[0] : red Advisor
+     * capturedNumber[1] : black Advisor
+     * ...
+     * capturedNumber[11] : black Cannon
+     */
+    private int[] capturedNumber = new int[]{0,0,0,0,0,0,0,0,0,0,0,0};
+    public String getCapturedNumber(int n){
+        String s = String.valueOf(capturedNumber[n]);
+        return s;
+    }
     Set<Piece> getPieces() {
         return pieces;
     }
@@ -223,12 +337,12 @@ class DChessBoard {
         return isGameOver;
     }
     public boolean checkGameOver() {
-		if (redScore >= 60 || blackScore >= 60){
+        if (redScore >= 60 || blackScore >= 60){
             return true;
         } else {
             return false;
         }
-	}
+    }
     @Override
     public String toString() {
         String brdStr = "";
@@ -236,7 +350,7 @@ class DChessBoard {
         for (int i = 0; i < cols; i++) {
             brdStr += " " + i;
         }
-        brdStr += "\n";
+        brdStr += "|\n";
         for (int row = 0; row < rows; row++) {
             brdStr += row + "";
             for (int col = 0; col < cols; col++) {
@@ -245,17 +359,60 @@ class DChessBoard {
                     brdStr += " .";
                 } else {
                     switch (p.rank) {
-                        case GENERAL: brdStr += p.isRed ? " G" : " g"; break;
-                        case ADVISOR: brdStr += p.isRed ? " A" : " a"; break;
-                        case MINISTER: brdStr += p.isRed ? " M" : " m"; break;
-                        case CHARIOT: brdStr += p.isRed ? " Ch" : " ch"; break;
-                        case HORSE: brdStr += p.isRed ? " H" : " h"; break;
-                        case CANNON: brdStr += p.isRed ? " C" : " c"; break;
-                        case SOLDIER: brdStr += p.isRed ? " S" : " s"; break;
+                        case GENERAL:
+                            if(!p.isUp){
+                                brdStr += p.isRed ? " G." : " g."; break;//add point means didn`t turn back
+                            }else {
+                                brdStr += p.isRed ? " G" : " g"; break;
+                            }
+                        case ADVISOR:
+                        if(!p.isUp){
+                            brdStr += p.isRed ? " A." : " a."; break;
+                        }else {
+                            brdStr += p.isRed ? " A" : " a"; break;
+                        }
+                        case MINISTER:
+                        if(!p.isUp){
+                            brdStr += p.isRed ? " M." : " m."; break;
+                        }else {
+                            brdStr += p.isRed ? " M" : " m"; break;
+                        }
+                        case CHARIOT:
+                        if(!p.isUp){
+                            brdStr += p.isRed ? " Ch." : " ch."; break;
+                        }else {
+                            brdStr += p.isRed ? " Ch" : " ch"; break;
+                        }
+                        case HORSE:
+                        if(!p.isUp){
+                            brdStr += p.isRed ? " H." : " h."; break;
+                        }else {
+                            brdStr += p.isRed ? " H" : " h"; break;
+                        }
+                        case CANNON:
+                        if(!p.isUp){
+                            brdStr += p.isRed ? " C." : " c."; break;
+                        }else {
+                            brdStr += p.isRed ? " C" : " c"; break;
+                        }
+                        case SOLDIER:
+                        if(!p.isUp){
+                            brdStr += p.isRed ? " S." : " s."; break;
+                        }else {
+                            brdStr += p.isRed ? " S" : " s"; break;
+                        }
                     }}
-                }
-            brdStr += "\n";
+            }
+            brdStr += "|\n";
         }
+        String savedata = "";
+        if (isRedTurn){
+            savedata = brdStr += "Red turn|\n\n";
+        } else {
+            savedata = brdStr += "Black turn|\n\n";
+        }
+        save.saveDataFile(savedata);
+        save.saveJustDataFile(savedata);
         return brdStr;
     }
     //随机初始化棋子
@@ -297,7 +454,7 @@ class DChessBoard {
             pieces.add(new Piece(column[2], row[7], true, Rank.SOLDIER, "rz" , 1));
             pieces.add(new Piece(column[3], row[0], true, Rank.SOLDIER, "rz" , 1));
             pieces.add(new Piece(column[3], row[1], true, Rank.SOLDIER, "rz" , 1));
-            pieces.add(new Piece(column[3], row[2], true, Rank.SOLDIER, "bz" , 1));
+            pieces.add(new Piece(column[3], row[2], true, Rank.SOLDIER, "rz" , 1));
             pieces.add(new Piece(column[3], row[3], false, Rank.SOLDIER, "bz" , 1));
             pieces.add(new Piece(column[3], row[4], false, Rank.SOLDIER, "bz" , 1));
             pieces.add(new Piece(column[3], row[5], false, Rank.SOLDIER, "bz" , 1));
@@ -318,103 +475,115 @@ class DChessBoard {
                         pieces.add(pieceEaten);
                         blackScore += 30;
                     } else {
-                        Piece pieceEaten = new Piece(4.5, 8.0, false, Rank.GENERAL, "bb", 30);
+                        Piece pieceEaten = new Piece(4.5, 7.8, false, Rank.GENERAL, "bb", 30);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
                         redScore += 30;
                     }
                     System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
-                    if (checkGameOver()){System.exit(0);}
+                    if (checkGameOver()){save.clearDataFile();isGameOver = true;}
                     break;
                 case ADVISOR:
                     if (targetP.isRed){
                         Piece pieceEaten = new Piece(-1.5, 0.3, true, Rank.ADVISOR, "rs", 10);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[0] += 1;
                         blackScore += 10;
                     } else {
                         Piece pieceEaten = new Piece(4.5, 6.9, false, Rank.ADVISOR, "bs", 10);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[1] += 1;
                         redScore += 10;
                     }
                     System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
-                    if (checkGameOver()){System.exit(0);}
+                    if (checkGameOver()){save.clearDataFile();isGameOver = true;}
                     break;
                 case MINISTER:
                     if (targetP.isRed){
                         Piece pieceEaten = new Piece(-1.5, 1.1, true, Rank.MINISTER, "rx", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[2] += 1;
                         blackScore += 5;
                     } else {
                         Piece pieceEaten = new Piece(4.5, 6.0, false, Rank.MINISTER, "bx", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[3] += 1;
                         redScore += 5;
                     }
                     System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
-                    if (checkGameOver()){System.exit(0);}
+                    if (checkGameOver()){save.clearDataFile();isGameOver = true;}
                     break;
                 case CHARIOT:
                     if (targetP.isRed){
                         Piece pieceEaten = new Piece(-1.5, 2.0, true, Rank.CHARIOT, "rj", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[4] += 1;
                         blackScore += 5;
                     } else {
                         Piece pieceEaten = new Piece(4.5, 5.1, false, Rank.CHARIOT, "bj", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[5] += 1;
                         redScore += 5;
                     }
                     System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
-                    if (checkGameOver()){System.exit(0);}
+                    if (checkGameOver()){save.clearDataFile();isGameOver = true;}
                     break;
                 case HORSE:
                     if (targetP.isRed){
                         Piece pieceEaten = new Piece(-1.5, 3.0, true, Rank.HORSE, "rm", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[6] += 1;
                         blackScore += 5;
                     } else {
                         Piece pieceEaten = new Piece(4.5, 4.3, false, Rank.HORSE, "bm", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[7] += 1;
                         redScore += 5;
                     }
                     System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
-                    if (checkGameOver()){System.exit(0);}
+                    if (checkGameOver()){save.clearDataFile();isGameOver = true;}
                     break;
                 case SOLDIER:
                     if (targetP.isRed){
                         Piece pieceEaten = new Piece(-1.5, 4.6, true, Rank.SOLDIER, "rz", 1);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[8] += 1;
                         blackScore += 1;
                     } else {
                         Piece pieceEaten = new Piece(4.5, 2.5, false, Rank.SOLDIER, "bz", 1);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[9] += 1;
                         redScore += 1;
                     }
                     System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
-                    if (checkGameOver()){System.exit(0);}
+                    if (checkGameOver()){save.clearDataFile();isGameOver = true;}
                     break;
                 case CANNON:
                     if (targetP.isRed){
                         Piece pieceEaten = new Piece(-1.5, 3.8, true, Rank.CANNON, "rp", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[10] += 1;
                         blackScore += 5;
                     } else {
                         Piece pieceEaten = new Piece(4.5, 3.4, false, Rank.CANNON, "bp", 5);
                         pieceEaten.turnUp(true);
                         pieces.add(pieceEaten);
+                        capturedNumber[11] += 1;
                         redScore += 5;
                     }
                     System.out.println("RedScore = " + redScore + "; BlackScore = " + blackScore);
-                    if (checkGameOver()){System.exit(0);}
+                    if (checkGameOver()){save.clearDataFile();isGameOver = true;}
                     break;
             }
         }
@@ -503,7 +672,7 @@ class DChessBoard {
         return target != null && target.isRed == isRed;
     }
     private boolean isValidGeneralMove(int fromCol, int fromRow,
-                                      int toCol,   int toRow, boolean isRed) {
+                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
             return true;
         }
@@ -514,7 +683,7 @@ class DChessBoard {
         }
     }
     private boolean isValidAdvisorMove(int fromCol, int fromRow,
-                                      int toCol,   int toRow, boolean isRed) {
+                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
             return true;
         }
@@ -525,7 +694,7 @@ class DChessBoard {
         }
     }
     private boolean isValidMinisterMove(int fromCol, int fromRow,
-                                      int toCol,   int toRow, boolean isRed) {
+                                        int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
             return true;
         }
@@ -536,7 +705,7 @@ class DChessBoard {
         }
     }
     private boolean isValidChariotMove(int fromCol, int fromRow,
-                                      int toCol,   int toRow, boolean isRed) {
+                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
             return true;
         }
@@ -547,7 +716,7 @@ class DChessBoard {
         }
     }
     private boolean isValidHorseMove(int fromCol, int fromRow,
-                                      int toCol,   int toRow, boolean isRed) {
+                                     int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
             return true;
         }
@@ -558,7 +727,7 @@ class DChessBoard {
         }
     }
     private boolean isValidSoldierMove(int fromCol, int fromRow,
-                                      int toCol,   int toRow, boolean isRed) {
+                                       int toCol,   int toRow, boolean isRed) {
         if(pieceAt(toCol,toRow) == null){
             return true;
         }
