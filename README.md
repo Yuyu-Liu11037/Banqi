@@ -2,8 +2,8 @@
 
 ## Project Requirements (finished)
 ### Task 1: Game Initialization
-* Restart the game by clicking a button <sub>(maybe use a JButton?)</sub>
-* Display the status of the game <sub>(already printed the status in terminal. Need to use the swing components to show status on screen.)</sub>
+* Restart the game by clicking a button
+* Display the status of the game
 * initialize a new chess game (including chessboard, shuffiling the pieces, randomly placing the pieces face-down)
 ### Task 2: Loading and Saving
 * Save the current game into a file
